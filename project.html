@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Winning Calculator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #400982, #3eb489);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .board-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 4px solid #000;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2em;
+      cursor: pointer;
+    }
+
+    .cell[data-color="white"] {
+      background-color: #f2f2f2;
+      color: #000;
+    }
+
+    .cell[data-color="black"] {
+      background-color: #333;
+      color: #fff;
+    }
+
+    .piece-selector {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    select, button {
+      font-size: 1em;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background-color: #00c9a7;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #008f76;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #6effff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chess Winning Probability Calculator</h1>
+
+  <div class="piece-selector">
+    <label for="piece-select">Select a Piece: </label>
+    <select id="piece-select">
+      <option value="♔">White King</option>
+      <option value="♕">White Queen</option>
+      <option value="♖">White Rook</option>
+      <option value="♗">White Bishop</option>
+      <option value="♘">White Knight</option>
+      <option value="♙">White Pawn</option>
+      <option value="♚">Black King</option>
+      <option value="♛">Black Queen</option>
+      <option value="♜">Black Rook</option>
+      <option value="♝">Black Bishop</option>
+      <option value="♞">Black Knight</option>
+      <option value="♟">Black Pawn</option>
+    </select>
+    <button id="clear-board">Clear Board</button>
+  </div>
+
+  <div class="board-container">
+    <div id="chessboard" class="chessboard"></div>
+  </div>
+
+  <button id="calculate-btn">Calculate Winning Probability</button>
+  <div class="result" id="result">Winning Probability:</div>
+
+  <script>
+    const chessboard = document.getElementById("chessboard");
+    const pieceSelector = document.getElementById("piece-select");
+    const resultDisplay = document.getElementById("result");
+    const clearBoardBtn = document.getElementById("clear-board");
+
+    const pieceValues = {
+      "♕": 9, "♛": 9,
+      "♖": 5, "♜": 5,
+      "♗": 3, "♝": 3,
+      "♘": 3, "♞": 3,
+      "♙": 1, "♟": 1,
+      "♔": 0, "♚": 0  
+    };
+
+    for (let i = 0; i < 64; i++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.index = i;
+
+      cell.dataset.color = ((Math.floor(i / 8) + i) % 2 === 0) ? "white" : "black";
+      chessboard.appendChild(cell);
+    }
+
+    chessboard.addEventListener("click", (event) => {
+      if (!event.target.classList.contains("cell")) return;
+      const selectedPiece = pieceSelector.value;
+      event.target.textContent = selectedPiece;
+    });
+
+    clearBoardBtn.addEventListener("click", () => {
+      const cells = document.querySelectorAll(".cell");
+      cells.forEach(cell => cell.textContent = "");
+    });
+
+    document.getElementById("calculate-btn").addEventListener("click", () => {
+      const cells = document.querySelectorAll(".cell");
+      let whiteScore = 0;
+      let blackScore = 0;
+      let whitePositionScore = 0;
+      let blackPositionScore = 0;
+
+      cells.forEach(cell => {
+        const piece = cell.textContent;
+        const position = parseInt(cell.dataset.index);
+
+        if (pieceValues[piece] !== undefined) {
+          if (piece === piece.toUpperCase()) {
+            whiteScore += pieceValues[piece];
+            whitePositionScore += evaluatePosition(piece, position, 'white');
+          } else {
+            blackScore += pieceValues[piece];
+            blackPositionScore += evaluatePosition(piece, position, 'black');
+          }
+        }
+      });
+
+      const totalScore = whiteScore + blackScore;
+      let materialBalance = (whiteScore / totalScore) * 100;
+
+      materialBalance += (whitePositionScore - blackPositionScore) / totalScore * 10;
+
+      const probability = totalScore ? materialBalance : 50;
+      resultDisplay.textContent = `Winning Probability (White): ${probability.toFixed(2)}%`;
+    });
+
+    function evaluatePosition(piece, position, color) {
+      const row = Math.floor(position / 8);
+      const col = position % 8;
+
+      const centerControlBonus = (3 - Math.abs(3 - row)) + (3 - Math.abs(3 - col));
+
+      if (piece === "♞" || piece === "♘") {
+        return centerControlBonus * 2; 
+      }
+
+      
+      return centerControlBonus;
+    }
+  </script>
+</body>
+</html>
